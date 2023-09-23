@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 class Simulate:
@@ -74,12 +75,13 @@ class Simulate:
         """Perform simulation
 
         :param tend: Simulation duration [days]
-        :return: Total operation, repair and waiting time 
+        :return: Total operation, repair and waiting time
         """
 
         # Initialize operation times and tend
         self.tend = tend
         self.failure_times = [self.get_operation_time() for _ in range(self.n)]
+        self.total_operation_time = np.sum(self.failure_times)
 
         while self.now < self.tend:
 
@@ -119,14 +121,32 @@ class Simulate:
                     self.failure_times[broken_plane_idx] = self.now + \
                         operation_time
 
-        assert (self.total_operation_time + self.total_waiting_time +
-                self.total_waiting_time) - self.n * self.tend < 1e-5
+        assert np.abs((self.total_operation_time + self.total_waiting_time +
+                       self.total_repair_time) - (self.n * self.tend)) < 1e-5
 
         return (self.total_operation_time,
                 self.total_repair_time, self.total_waiting_time)
 
 
+def exercises(planes: int, duration: float, runs: int) -> None:
+
+    cases = [Simulate(planes) for _ in range(runs)]
+    data = np.array([case(duration) for case in cases])
+
+    downtime = data[:, 1:].sum(axis=1)
+
+    print(f"Expected downtime: {downtime.sum() / runs}")
+
+    larger = 0.
+    for time in downtime:
+        if time > 4:
+            larger += 1
+
+    print(f"P(X > 4) = {larger / runs}")
+
+    return None
+
+
 if __name__ == "__main__":
 
-    maintenance = Simulate(10)
-    maintenance(7)
+    exercises(10, 7, 150)
