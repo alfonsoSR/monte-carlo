@@ -1,82 +1,132 @@
 import numpy as np
-import matplotlib.pyplot as plt
 
 
-def get_failure_time(tend: float, L: float = 0.2):
-    """Calculate time till next failure
+class Simulate:
+    """Simulate aircraft maintenance problem
 
-    Uses exponential distribution with parameter L"""
+    :param n: Number of aircraft
+    """
 
-    val = np.random.exponential(1. / L)
+    def __init__(self, n: int) -> None:
 
-    if val >= tend:
-        return tend
-    else:
-        return val
+        self.n = n
+        self.tend = 0.
 
+        self.now = 0.
+        self.total_operation_time = 0.
+        self.total_waiting_time = 0.
+        self.total_repair_time = 0.
 
-def get_repair_time(mu: float = 0.25, std: float = 0.05) -> float:
-    """Calculate repair time for a given plane
+        self.failure_times = [0. for _ in range(self.n)]
 
-    Uses normal distribution"""
+        return None
 
-    return np.random.normal(mu, std)
+    def get_operation_time(self, L: float = 0.2) -> float:
+        """Calculate operation time for a given plane.
 
+        Operation time (top) is calculated using an exponential distribution 
+        with parameter L.
 
-def simulate(n: int = 3, tend: float = 7.):
+        If top + now > tend, we set top = tend - now.
 
-    now = 0.
-    time_to_failure = [get_failure_time(tend) for _ in range(n)]
-    total_operational_time = np.sum(time_to_failure)
-    total_repair_time = 0.
-    total_waiting_time = 0.
+        :param L: Lambda parameter of exponential distribution
+        """
+        _operation_time = np.random.exponential(1. / L)
 
-    while now < tend:
-
-        i = time_to_failure.index(min(time_to_failure))
-
-        _repair_time = get_repair_time()
-        if now + _repair_time >= tend:
-            total_repair_time += tend - now
-            break
+        if _operation_time + self.now > self.tend:
+            return self.tend - self.now
         else:
-            total_repair_time += _repair_time
-        now = time_to_failure[i] + _repair_time         #
-        _new_failure_time = get_failure_time(tend)
-        if now + _new_failure_time >= tend:
-            total_operational_time += tend - now
+            return _operation_time
+
+    def get_repair_time(self, mu: float = 0.25, std: float = 0.05) -> float:
+        """Calculate repair time for a given aircraft.
+
+        Repair time (tr) is calculated using a normal distribution with
+        expected value mu and variance std^2.
+
+        If tr + now > tend, we set tr = tend - now
+
+        :param mu: Expected value
+        :param std: Standard deviation [days]
+        """
+        _repair_time = np.random.normal(mu, std)
+
+        if _repair_time + self.now >= self.tend:
+            return self.tend - self.now
         else:
-            total_operational_time += _new_failure_time
-        time_to_failure[i] = now + _new_failure_time
-        if time_to_failure[i] > tend:
-            time_to_failure[i] = tend
+            return _repair_time
 
-        while min(time_to_failure) < now:
+    def get_waiting_time(self, failure_time: float) -> float:
+        """Calculate waiting time for a given plane
 
-            i = time_to_failure.index(min(time_to_failure))
-            total_waiting_time += now - time_to_failure[i]
-            _repair_time = get_repair_time()
-            if now + _repair_time >= tend:
-                total_repair_time += tend - now
-                break
-            else:
-                total_repair_time += _repair_time
-            now += _repair_time                                     #
-            _new_failure_time = get_failure_time(tend)
-            if now + _new_failure_time >= tend:
-                total_operational_time += tend - now
-            else:
-                total_operational_time += _new_failure_time
-            time_to_failure[i] = now + _new_failure_time
-            if time_to_failure[i] > 7:
-                time_to_failure[i] = 7.
+        :param failure_time: Time of failure for waiting plane
+        """
+        return self.now - failure_time
 
-    assert (
-        total_operational_time + total_repair_time + total_waiting_time ==
-        tend * n
-    )
+    def get_broken_plane(self) -> tuple[int, float]:
+        """Find index and operational time of next plane to fail"""
+
+        _time = min(self.failure_times)
+        _plane = self.failure_times.index(_time)
+        return _plane, _time
+
+    def __call__(self, tend: float) -> tuple[float, float, float]:
+        """Perform simulation
+
+        :param tend: Simulation duration [days]
+        :return: Total operation, repair and waiting time 
+        """
+
+        # Initialize operation times and tend
+        self.tend = tend
+        self.failure_times = [self.get_operation_time() for _ in range(self.n)]
+
+        while self.now < self.tend:
+
+            # Find first plane to fail and set now to its operational time
+            broken_plane_idx, self.now = self.get_broken_plane()
+
+            # Find time to repair failed plane and update now to end of repair
+            repair_time = self.get_repair_time()
+            self.total_repair_time += repair_time
+            self.now += repair_time
+
+            # Set new operation time for plane (0 if now = end)
+            operation_time = self.get_operation_time()
+            self.total_operation_time += operation_time
+            self.failure_times[broken_plane_idx] = self.now + operation_time
+
+            # Bring rest of planes to present
+            while min(self.failure_times) < self.now:
+
+                # Get index and time of failure for next plane to break
+                broken_plane_idx, break_time = self.get_broken_plane()
+
+                # Find waiting time for broken plane
+                waiting_time = self.get_waiting_time(break_time)
+                self.total_waiting_time += waiting_time
+
+                if self.now <= self.tend:
+
+                    # Find time to repair plane and update now to end of repair
+                    repair_time = self.get_repair_time()
+                    self.total_repair_time += repair_time
+                    self.now += repair_time
+
+                    # Find new operation time for plane
+                    operation_time = self.get_operation_time()
+                    self.total_operation_time += operation_time
+                    self.failure_times[broken_plane_idx] = self.now + \
+                        operation_time
+
+        assert (self.total_operation_time + self.total_waiting_time +
+                self.total_waiting_time) - self.n * self.tend < 1e-5
+
+        return (self.total_operation_time,
+                self.total_repair_time, self.total_waiting_time)
 
 
 if __name__ == "__main__":
 
-    simulate()
+    maintenance = Simulate(10)
+    maintenance(7)
