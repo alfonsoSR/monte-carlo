@@ -149,4 +149,4 @@ def exercises(planes: int, duration: float, runs: int) -> None:
 
 if __name__ == "__main__":
 
-    exercises(10, 7, 150)
+    exercises(10, 7, 50)
