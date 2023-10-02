@@ -134,7 +134,7 @@ def exercises(planes: int, duration: float, runs: int) -> None:
     data = np.array([case(duration) for case in cases])
 
     downtime = data[:, 1:].sum(axis=1)
-    mu = downtime.sum() / runs
+    mu = downtime.sum() / runs # Expected value for downtime
 
     variance = (downtime - mu)**2/(runs)
     print(f"Standard deviation: {round(np.sqrt(variance.sum()),3)}")
@@ -148,9 +148,13 @@ def exercises(planes: int, duration: float, runs: int) -> None:
         if time > 4:
             larger += 1
 
-    
+    print("Expected")
 
-    print(f"P(X > 4) = {larger / runs}")
+    probability = larger / runs # Probability of downtime > 4
+
+    print(f"P(X > 4) = {probability}")
+
+    print(f"Standard Error of P(X > 4): {round(np.sqrt(probability*(1-probability)/runs),3)}")
 
     return None
 
