@@ -137,9 +137,11 @@ def exercises(planes: int, duration: float, runs: int) -> None:
     mu = downtime.sum() / runs
 
     variance = (downtime - mu)**2/(runs)
-    print(f"Standard deviation: {np.sqrt(variance.sum())}")
+    print(f"Standard deviation: {round(np.sqrt(variance.sum()),3)}")
 
-    print(f"Expected downtime: {mu}")
+    print(f"Standard Error: {round(np.sqrt(variance.sum()/runs),3)}")
+
+    print(f"Expected downtime: {round(mu,3)}")
 
     larger = 0.
     for time in downtime:

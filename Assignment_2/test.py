@@ -1,4 +1,18 @@
 import random
+import pandas as pd
+from math import comb
+
+def binomial_distribution(n: int, k: int, q: float) -> float:
+    """
+    Calculate the probability of k successes in n independent Bernoulli trials
+    with probability of success q.
+
+    :param n: Number of trials
+    :param k: Number of successes
+    :param q: Probability of success
+    :return: Probability of k successes in n trials
+    """
+    return comb(n, k) * (q ** k) * ((1 - q) ** (n - k))
 
 def generate_random_integers_within_range(start, end, k):
     """
@@ -50,3 +64,23 @@ parameters = [[5,200,0], [6,200,0], [7,200,0], [8,200,0], [9,200,0]]
 
 print(parameters[0][0])
 
+df = pd.DataFrame(columns=['q', 'y5', 'y6', 'y7', 'y8', 'y9', 'P_breach'])
+
+df.loc[0] = [0.01, 0, 0, 0, 0, 0, 0]
+df.loc[1] = [0.1, 0, 0, 0, 0, 0, 0]
+df.loc[2] = [0.2, 0, 0, 0, 0, 0, 0]
+
+print(df.shape)
+
+cond = [0.015, 0.015, 0.055, 0.155, 0.395]
+
+for i, row in df.iterrows():
+    row['y5'] = round(binomial_distribution(22, 5, row['q']), 3)
+    row['y6'] = round(binomial_distribution(22, 6, row['q']), 3)
+    row['y7'] = round(binomial_distribution(22, 7, row['q']), 3)
+    row['y8'] = round(binomial_distribution(22, 8, row['q']), 3)
+    row['y9'] = round(binomial_distribution(22, 9, row['q']), 3)
+
+    row['P_breach'] = cond[0]*row['y5'] + cond[1]*row['y6'] + cond[2]*row['y7'] + cond[3]*row['y8'] + cond[4]*row['y9']
+
+df.to_latex('test.tex')

@@ -124,6 +124,10 @@ print(parameters)
 p_b = 0
 
 for parameter in parameters:
-    p_b += parameter[2] * binomial_distribution(nedges,parameter[0],q)
+    binom_dist = binomial_distribution(nedges,parameter[0],q)
 
-print("P(breach) = ", p_b)
+    print("P(breach | k = ", parameter[0], ") = ", parameter[2])
+    print("P(k = ", parameter[0], ") = ", binom_dist)
+    p_b += parameter[2] * binom_dist
+
+print("\nP(breach) = ", p_b)
