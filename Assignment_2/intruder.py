@@ -4,6 +4,7 @@
 import numpy as np
 import random
 from math import comb
+import pandas as pd
 
 def generate_random_integers_within_range(start, end, k):
     """
@@ -74,7 +75,7 @@ tnode = max(max(edges))
 def sysfail(failed, tnode, maxpathlen):
     # input:
     #    failed: a list of tuples (n1,n2), representing the failed edges
-    #    tnode: terminal node number
+    #    tnode: terminal node number (end node)
     #    maxpathlen: length of longest path from 0 to tnode
     breach = 0
     # construct the incidence matrix:
@@ -98,12 +99,15 @@ def sysfail(failed, tnode, maxpathlen):
 # Simulation
 seedval = 3875663
 np.random.seed(seedval)
-nrep = 1000
-q = 0.2
+# nrep = 1000
+q = 0.01
 maxpathlen = 22
 
+repl_per_k = 1000
+# nrep = 6812
 
-parameters = [ [5,200,0], [6,200,0], [7,200,0], [8,200,0], [9,200,0] ]
+# 0: number of failed edges; 1: number of replications; 2: P(breach); 3: standard error
+parameters = [ [4,repl_per_k,0,0], [5,repl_per_k,0,0], [6,repl_per_k,0,0], [7,repl_per_k,0,0], [8,repl_per_k,0,0] ]
 
 for parameter in parameters:
 
@@ -115,19 +119,54 @@ for parameter in parameters:
         # create list of failed edges:
         failed = get_failed_edges(0,21,parameter[0])
         breaches += sysfail(failed, tnode, maxpathlen)
-    parameter[2] = breaches/parameter[1]
+    parameter[2] = breaches/parameter[1] #
         
     #print("There were", breaches, "security breaches. Estimated P(breach)=",parameter[2])
 
 print(parameters)
 
 p_b = 0
+se_p = 0
+p_breach = 0
+se_p_breach = 0
+
+latex_table = pd.DataFrame(columns=[ 'pi', 'se_pi'])
 
 for parameter in parameters:
     binom_dist = binomial_distribution(nedges,parameter[0],q)
+    ai = binom_dist
+    pi = parameter[2]
+    ni = parameter[1]
+    i = parameter[0]
+    se_pi = np.sqrt(pi*(1-pi) / ni)
+    p_breach += pi * ai
+    se_p_breach += ai*ai * se_pi*se_pi
+
+    latex_table.loc[i] = [pi, se_pi]
 
     print("P(breach | k = ", parameter[0], ") = ", parameter[2])
     print("P(k = ", parameter[0], ") = ", binom_dist)
+
+    parameter[3] = np.sqrt(parameter[2]*(1-parameter[2]) / parameter[1] )
+    print(f"Standard error (k = { parameter[0] }) = ", parameter[3])
+
     p_b += parameter[2] * binom_dist
+    se_p += binom_dist**2 * parameter[3]**2
+
+se_p = np.sqrt(se_p)
+se_p_breach = np.sqrt(se_p_breach)
+
+a = np.sqrt(p_breach*(1-p_breach) / repl_per_k)
+
+# print("should be 0 = ", se_p_breach )
 
 print("\nP(breach) = ", p_b)
+print("Standard error (breach) = ", se_p)
+print("accuracy = ", se_p/p_b)
+
+print("required n for accuracy 0.1 = ", ( (se_p/p_b)/0.1 )**2 * repl_per_k) # 1000 is the number of replications for each k
+
+print("required n for accuracy 0.01 = ", ( (se_p/p_b)/0.01 )**2 * repl_per_k)
+
+# latex table with i, pi, se_pi
+print(latex_table.to_latex())
