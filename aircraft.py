@@ -195,16 +195,14 @@ def calculate_expected_value_of_list_batch(my_list:list, batch_size:int):
     expected_values = [calculate_expected_value_of_list(batch) for batch in batched_list]
     return calculate_expected_value_of_list(expected_values)
 
-def calculate_standard_deviation_of_list(my_list:list):
-    return np.std(my_list) 
+def calculate_standard_error_of_list(my_list:list):
+    return (np.std(my_list)/np.sqrt(len(my_list)))
 
-def calculate_standard_deviation_of_list_batch(my_list:list, batch_size:int):  
+def calculate_standard_error_of_list_batch(my_list:list, batch_size:int):  
     batched_list = [my_list[i:i+batch_size] for i in range(0, len(my_list), batch_size)]
-    standard_deviations =  [calculate_standard_deviation_of_list(batch) for batch in batched_list]
+    expected_values_of_batches =  [calculate_expected_value_of_list(batch) for batch in batched_list]
 
-    print('std: ', calculate_standard_deviation_of_list(standard_deviations))
-
-    return calculate_expected_value_of_list(standard_deviations)
+    return calculate_standard_error_of_list(expected_values_of_batches)
 
 
 
@@ -271,9 +269,9 @@ def assignment_4_1(no_of_planes:int, weeks:int):
     batch_size = 25
 
     part_c_table = pd.DataFrame(columns=[
-        'data', 'expected_value', 'standard_deviation', 
-        'expected_value_batch', 'standard_deviation_batch', 
-        'expected_value_batch_min', 'standard_deviation_batch_min'])
+        'data', 'expected_value', 'standard_error', 
+        'expected_value_batch', 'standard_error_batch', 
+        'expected_value_batch_min', 'standard_error_batch_min'])
     
     part_c_table['data'] = [
         'sojourn_times_1', 'sojourn_times_3', 'week_sojourn_times_1', 'week_sojourn_times_3']
@@ -282,31 +280,31 @@ def assignment_4_1(no_of_planes:int, weeks:int):
         calculate_expected_value_of_list(sojourn_times_3), 
         calculate_expected_value_of_list(week_sojourn_times_1), 
         calculate_expected_value_of_list(week_sojourn_times_3)]
-    part_c_table['standard_deviation'] = [
-        calculate_standard_deviation_of_list(sojourn_times_1), 
-        calculate_standard_deviation_of_list(sojourn_times_3), 
-        calculate_standard_deviation_of_list(week_sojourn_times_1), 
-        calculate_standard_deviation_of_list(week_sojourn_times_3)]
+    part_c_table['standard_error'] = [
+        calculate_standard_error_of_list(sojourn_times_1), 
+        calculate_standard_error_of_list(sojourn_times_3), 
+        calculate_standard_error_of_list(week_sojourn_times_1), 
+        calculate_standard_error_of_list(week_sojourn_times_3)]
     part_c_table['expected_value_batch'] = [
         calculate_expected_value_of_list_batch(sojourn_times_1, batch_size), 
         calculate_expected_value_of_list_batch(sojourn_times_3, batch_size), 
         calculate_expected_value_of_list_batch(week_sojourn_times_1, batch_size), 
         calculate_expected_value_of_list_batch(week_sojourn_times_3, batch_size)]
-    part_c_table['standard_deviation_batch'] = [
-        calculate_standard_deviation_of_list_batch(sojourn_times_1, batch_size), 
-        calculate_standard_deviation_of_list_batch(sojourn_times_3, batch_size), 
-        calculate_standard_deviation_of_list_batch(week_sojourn_times_1, batch_size), 
-        calculate_standard_deviation_of_list_batch(week_sojourn_times_3, batch_size)]
+    part_c_table['standard_error_batch'] = [
+        calculate_standard_error_of_list_batch(sojourn_times_1, batch_size), 
+        calculate_standard_error_of_list_batch(sojourn_times_3, batch_size), 
+        calculate_standard_error_of_list_batch(week_sojourn_times_1, batch_size), 
+        calculate_standard_error_of_list_batch(week_sojourn_times_3, batch_size)]
     part_c_table['expected_value_batch_min'] = [
         calculate_expected_value_of_list_batch(sojourn_times_1, batch_size_min), 
         calculate_expected_value_of_list_batch(sojourn_times_3, batch_size_min), 
         calculate_expected_value_of_list_batch(week_sojourn_times_1, batch_size_min), 
         calculate_expected_value_of_list_batch(week_sojourn_times_3, batch_size_min)]
-    part_c_table['standard_deviation_batch_min'] = [
-        calculate_standard_deviation_of_list_batch(sojourn_times_1, batch_size_min), 
-        calculate_standard_deviation_of_list_batch(sojourn_times_3, batch_size_min), 
-        calculate_standard_deviation_of_list_batch(week_sojourn_times_1, batch_size_min), 
-        calculate_standard_deviation_of_list_batch(week_sojourn_times_3, batch_size_min)]
+    part_c_table['standard_error_batch_min'] = [
+        calculate_standard_error_of_list_batch(sojourn_times_1, batch_size_min), 
+        calculate_standard_error_of_list_batch(sojourn_times_3, batch_size_min), 
+        calculate_standard_error_of_list_batch(week_sojourn_times_1, batch_size_min), 
+        calculate_standard_error_of_list_batch(week_sojourn_times_3, batch_size_min)]
 
     pd.set_option("display.max_rows", None, "display.max_columns", None)
     print(part_c_table)
